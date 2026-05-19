@@ -1,0 +1,40 @@
+name: Daily AI News Digest
+
+on:
+  schedule:
+    - cron: "30 3 * * *" # 11:30 Beijing time = 03:30 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-news-digest
+  cancel-in-progress: true
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Send digest email
+        env:
+          SMTP_HOST: smtp.gmail.com
+          SMTP_PORT: "465"
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_TO: shenxinlei755@gmail.com
+          NEWS_FEEDS: |
+            https://news.google.com/rss/search?q=%22AI+tool%22+OR+%22AI+tools%22+when:1d&hl=en-US&gl=US&ceid=US:en
+            https://news.google.com/rss/search?q=%22artificial+intelligence%22+tool+when:1d&hl=en-US&gl=US&ceid=US:en
+            https://news.google.com/rss/search?q=%22machine+learning%22+tool+when:1d&hl=en-US&gl=US&ceid=US:en
+        run: python scripts/daily_ai_news.py --hours 24 --limit 12
